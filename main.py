@@ -10,12 +10,13 @@ from sklearn.preprocessing import Imputer
 from sklearn import preprocessing, svm
 from skimage import io, color, segmentation
 from math import ceil
+from matting import closed_form_matting
 import os
 import sys
 import cv2
 import glob
 import time
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
 import skimage
 import caffe
@@ -29,8 +30,8 @@ parser.add_argument('-o','--output-dir', default='./Output/' ,help='Output direc
 parser.add_argument('--caffeNet-dir', default='./Tools/CaffeNet/', help='Directory containing caffeNet model')
 parser.add_argument('--gpu-mode', default=False, help='Use gpu mode for caffe')
 parser.add_argument('--training-features-dir', default='./Features/', help='Directory containing training features file')
-parser.add_argument('--visual-output', default=True, help='Visual output of the processing (True for visualing, False otherwise)')
-parser.add_argument('--visual-output-save', default=True, help='Save the visual output of the processing (True for saving, False otherwise)')
+parser.add_argument('--visual-output', default=False, help='Visual output of the processing (True for visualing, False otherwise)')
+parser.add_argument('--visual-output-save', default=False, help='Save the visual output of the processing (True for saving, False otherwise)')
 args = parser.parse_args()
 
 ############################ Functions #################################
@@ -176,8 +177,12 @@ for n in range(len(org_images)):
 
     print "Hair Detection at patch-level"
 
-    tic = time.clock()
+    # tic = time.clock()
+    tic = time.time()
+    num = 0
     for (x, y) in sliding_window(border_org_image, stepSize = detect_step):
+        num += 1
+        print time.time()
         if (y + patch_dim > border_org_image.shape[0]) or (x + patch_dim > border_org_image.shape[1]):
             continue
         image_block_rgb             = border_org_image_rgb[ y:y+patch_dim , x:x+patch_dim, :]
@@ -189,7 +194,6 @@ for n in range(len(org_images)):
         feature_array               = imp.transform(fVector.reshape(1,-1))
         feature_array               = scalerDet.transform(feature_array)
         hair_prediction             = my_clf_det.predict(feature_array)
-
         if hair_prediction[0] == 1.0:
             output_image[ y:y+patch_dim, x:x+patch_dim ] += 1
             if args.visual_output_save or args.visual_output:
@@ -206,7 +210,8 @@ for n in range(len(org_images)):
             cv2.imshow("Window", np.fliplr(clone.reshape(-1,3)).reshape(clone.shape))
             cv2.waitKey(1)
             time.sleep(0.025)
-    toc = time.clock()
+    # toc = time.clock()
+    toc = time.time()
 
     print "Hair Detection completed"
     print "Processing time: ", toc-tic, "seconds"
@@ -233,193 +238,202 @@ for n in range(len(org_images)):
     cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region.png", Hair_region.astype(np.int)*255)
     cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-NonHair-region.png", NonHair_region.astype(np.int)*255)
 
-    if args.visual_output_save:
-        image_footprint = image_footprint * 255
-        cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-HairProb" + ".jpg", np.fliplr(image_footprint.reshape(-1,3)).reshape(image_footprint.shape))
+    alpha = closed_form_matting.closed_form_matting_with_trimap(org_image_rgb, NonHair_region.astype(np.int)*255);
+    cv2.imwrite(args.output_dir + "testalpha.png", alpha * 255.0)
+    cv2.imwrite(args.output_dir + "testalpha2.png", output_image * 255.0)
+    print alpha
+    # if args.visual_output_save:
+    #     image_footprint = image_footprint * 255
+    #     cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-HairProb" + ".jpg", np.fliplr(image_footprint.reshape(-1,3)).reshape(image_footprint.shape))
+    # ############### Segmentation: Classifier Training ##################
 
-    ############### Segmentation: Classifier Training ##################
+    # Block_size       = 25
+    # t                = 0.02
+    # reorder_vector   = np.array([0,1,2,5,8,7,6,3])
+    # exp              = np.array([7,6,5,4,3,2,1,0])
+    # uPattern_values  = compute_uPattern()
+    # Uncertain_region = (Hair_region + NonHair_region) != 1
 
-    Block_size       = 25
-    t                = 0.02
-    reorder_vector   = np.array([0,1,2,5,8,7,6,3])
-    exp              = np.array([7,6,5,4,3,2,1,0])
-    uPattern_values  = compute_uPattern()
-    Uncertain_region = (Hair_region + NonHair_region) != 1
+    # if np.count_nonzero(Uncertain_region) == 0:
+    #     print "Processing finished. No uncertain region found."
+    #     continue
 
-    if np.count_nonzero(Uncertain_region) == 0:
-        print "Processing finished. No uncertain region found."
-        continue
+    # fList = []
+    # lList = []
 
-    fList = []
-    lList = []
+    # print "--> Overlapping 25x25 patch extraction from uncertain region"
 
-    print "--> Overlapping 25x25 patch extraction from uncertain region"
+    # tic = time.clock()
+    # for (x, y) in sliding_window(Uncertain_region, stepSize=seg_step):
+    #     print "Segmentation Training"
+    #     if (y + Block_size > Uncertain_region.shape[0]) or (x + Block_size > Uncertain_region.shape[1]):
+    #         continue
+    #     patch_area_hair = np.count_nonzero(Hair_region[y:y+Block_size, x:x+Block_size])
+    #     patch_area_nonhair = np.count_nonzero(NonHair_region[y:y+Block_size, x:x+Block_size])
+    #     if patch_area_hair == (Block_size * Block_size):
+    #         label = 1
+    #     elif patch_area_nonhair == (Block_size * Block_size):
+    #         label = 0
+    #     else:
+    #         label = "ImpureSample"
+    #         continue
 
-    tic = time.clock()
-    for (x, y) in sliding_window(Uncertain_region, stepSize=seg_step):
-        if (y + Block_size > Uncertain_region.shape[0]) or (x + Block_size > Uncertain_region.shape[1]):
-            continue
-        patch_area_hair = np.count_nonzero(Hair_region[y:y+Block_size, x:x+Block_size])
-        patch_area_nonhair = np.count_nonzero(NonHair_region[y:y+Block_size, x:x+Block_size])
-        if patch_area_hair == (Block_size * Block_size):
-            label = 1
-        elif patch_area_nonhair == (Block_size * Block_size):
-            label = 0
-        else:
-            label = "ImpureSample"
-            continue
+    #     image_block_rgb = org_image_rgb[y:y+Block_size, x:x+Block_size, :]
+    #     image_block     = org_image[y:y+Block_size, x:x+Block_size]
+    #     print image_block
+    #     print reorder_vector
+    #     print t
+    #     print exp
+    #     print uPattern_values
+    #     fVector         = LTP_feature_extraction(image_block, reorder_vector, t, exp, uPattern_values)
+    #     fMeans          = cv2.mean(image_block_rgb)
+    #     fVector         = np.append(fVector, fMeans[:3], 0)
+    #     fList.append(fVector)
+    #     lList.append(label)
+    # toc = time.clock()
 
-        image_block_rgb = org_image_rgb[y:y+Block_size, x:x+Block_size, :]
-        image_block     = org_image[y:y+Block_size, x:x+Block_size]
-        fVector         = LTP_feature_extraction(image_block, reorder_vector, t, exp, uPattern_values)
-        fMeans          = cv2.mean(image_block_rgb)
-        fVector         = np.append(fVector, fMeans[:3], 0)
-        fList.append(fVector)
-        lList.append(label)
-    toc = time.clock()
+    # print "--> Processing time: ", toc-tic, "seconds"
 
-    print "--> Processing time: ", toc-tic, "seconds"
+    # feature_array = np.asarray(fList)
+    # label_array   = np.asarray(lList)
+    # ones          = np.count_nonzero(label_array)
+    # zeros         = np.count_nonzero(1 - label_array)
 
-    feature_array = np.asarray(fList)
-    label_array   = np.asarray(lList)
-    ones          = np.count_nonzero(label_array)
-    zeros         = np.count_nonzero(1 - label_array)
+    # print "--> Classifier training"
 
-    print "--> Classifier training"
+    # imp                = Imputer(missing_values = 'NaN', strategy = 'mean', axis = 1)
+    # feature_array      = imp.fit_transform(feature_array)
+    # scalerSeg          = preprocessing.StandardScaler().fit(feature_array)
+    # feature_array      = scalerSeg.transform(feature_array)
+    # hair_idx           = np.where(label_array == 1.0)[0]
+    # nonhair_idx        = np.where(label_array == 0.0)[0]
+    # hair_samples_no    = hair_idx.shape[0]
+    # nonhair_samples_no = nonhair_idx.shape[0]
 
-    imp                = Imputer(missing_values = 'NaN', strategy = 'mean', axis = 1)
-    feature_array      = imp.fit_transform(feature_array)
-    scalerSeg          = preprocessing.StandardScaler().fit(feature_array)
-    feature_array      = scalerSeg.transform(feature_array)
-    hair_idx           = np.where(label_array == 1.0)[0]
-    nonhair_idx        = np.where(label_array == 0.0)[0]
-    hair_samples_no    = hair_idx.shape[0]
-    nonhair_samples_no = nonhair_idx.shape[0]
+    # print "--> Hair samples: ", hair_samples_no, " NonHair samples: ", nonhair_samples_no
+    # print "--> Balancing data"
 
-    print "--> Hair samples: ", hair_samples_no, " NonHair samples: ", nonhair_samples_no
-    print "--> Balancing data"
+    # if hair_samples_no < nonhair_samples_no:
+    #     nonhair_array = [feature_array[i] for i in np.random.choice(nonhair_idx, size=hair_samples_no, replace=False)]
+    #     hair_array    = [feature_array[i] for i in np.random.choice(hair_idx, size=hair_samples_no, replace=False)]
+    #     hair_label    = [1] * hair_samples_no
+    #     nonhair_label = [0] * hair_samples_no
+    # elif nonhair_samples_no < hair_samples_no:
+    #     hair_array    = [feature_array[i] for i in np.random.choice(hair_idx, size=nonhair_samples_no, replace=False)]
+    #     nonhair_array = [feature_array[i] for i in np.random.choice(nonhair_idx, size=nonhair_samples_no, replace=False)]
+    #     hair_label    = [1] * nonhair_samples_no
+    #     nonhair_label = [0] * nonhair_samples_no
 
-    if hair_samples_no < nonhair_samples_no:
-        nonhair_array = [feature_array[i] for i in np.random.choice(nonhair_idx, size=hair_samples_no, replace=False)]
-        hair_array    = [feature_array[i] for i in np.random.choice(hair_idx, size=hair_samples_no, replace=False)]
-        hair_label    = [1] * hair_samples_no
-        nonhair_label = [0] * hair_samples_no
-    elif nonhair_samples_no < hair_samples_no:
-        hair_array    = [feature_array[i] for i in np.random.choice(hair_idx, size=nonhair_samples_no, replace=False)]
-        nonhair_array = [feature_array[i] for i in np.random.choice(nonhair_idx, size=nonhair_samples_no, replace=False)]
-        hair_label    = [1] * nonhair_samples_no
-        nonhair_label = [0] * nonhair_samples_no
+    # print "--> Hair samples: ", len(hair_label), " NonHair samples: ", len(nonhair_label)
 
-    print "--> Hair samples: ", len(hair_label), " NonHair samples: ", len(nonhair_label)
+    # train_feature = np.asarray(hair_array + nonhair_array)
+    # train_label   = np.asarray(hair_label + nonhair_label)
+    # my_clf        = svm.SVC()
+    # my_clf        = my_clf.fit(train_feature, train_label)
 
-    train_feature = np.asarray(hair_array + nonhair_array)
-    train_label   = np.asarray(hair_label + nonhair_label)
-    my_clf        = svm.SVC()
-    my_clf        = my_clf.fit(train_feature, train_label)
+    # ############### Segmentation: Classifier Testing ###################
 
-    ############### Segmentation: Classifier Testing ###################
+    # if args.visual_output:
+    #     image_footprint= org_image_rgb.copy()
 
-    if args.visual_output:
-        image_footprint= org_image_rgb.copy()
+    # Labels_img = 1 * Hair_region + 2 * NonHair_region
 
-    Labels_img = 1 * Hair_region + 2 * NonHair_region
+    # print "Hair Segmentation at pixel-level"
 
-    print "Hair Segmentation at pixel-level"
+    # tic = time.clock()
+    # for (x, y) in sliding_window( Uncertain_region, stepSize=seg_step):
+    #     print ""
+    #     if (y + Block_size > Uncertain_region.shape[0]) or (x + Block_size > Uncertain_region.shape[1]):
+    #         continue
+    #     Uncertain_patch_area = np.count_nonzero(Uncertain_region[ y+(Block_size-1)/2 : y+(Block_size-1)/2 + 3, x+(Block_size-1)/2 : x+(Block_size-1)/2 + 3])
 
-    tic = time.clock()
-    for (x, y) in sliding_window( Uncertain_region, stepSize=seg_step):
-        if (y + Block_size > Uncertain_region.shape[0]) or (x + Block_size > Uncertain_region.shape[1]):
-            continue
+    #     if Uncertain_patch_area == 0:
+    #         continue
 
-        Uncertain_patch_area = np.count_nonzero(Uncertain_region[ y+(Block_size-1)/2 : y+(Block_size-1)/2 + 3, x+(Block_size-1)/2 : x+(Block_size-1)/2 + 3])
+    #     image_block_rgb = org_image_rgb[y:y+Block_size, x:x+Block_size, :]
+    #     image_block     = org_image[y:y+Block_size, x:x+Block_size]
+    #     fVector         = LTP_feature_extraction(image_block, reorder_vector, t, exp, uPattern_values)
+    #     fMeans          = cv2.mean(image_block_rgb)
+    #     fVector         = np.append(fVector, fMeans[:3], 0)
+    #     feature_array   = imp.transform(fVector.reshape(1,-1))
+    #     feature_array   = scalerSeg.transform(feature_array)
+    #     hair_prediction = my_clf.predict(feature_array)
 
-        if Uncertain_patch_area == 0:
-            continue
+    #     if hair_prediction[0] == 1.0:
+    #         Labels_img[ y+(Block_size-1)/2 : y+(Block_size-1)/2 + 3, x+(Block_size-1)/2 : x+(Block_size-1)/2 + 3 ] = 3
+    #         if args.visual_output:
+    #             image_footprint[y+(Block_size-1)/2 : y+(Block_size-1)/2 + 3, x+(Block_size-1)/2 : x+(Block_size-1)/2 + 3, :] -= 0.04
+    #             hair_color = (0,0,255)
 
-        image_block_rgb = org_image_rgb[y:y+Block_size, x:x+Block_size, :]
-        image_block     = org_image[y:y+Block_size, x:x+Block_size]
-        fVector         = LTP_feature_extraction(image_block, reorder_vector, t, exp, uPattern_values)
-        fMeans          = cv2.mean(image_block_rgb)
-        fVector         = np.append(fVector, fMeans[:3], 0)
-        feature_array   = imp.transform(fVector.reshape(1,-1))
-        feature_array   = scalerSeg.transform(feature_array)
-        hair_prediction = my_clf.predict(feature_array)
+    #     elif hair_prediction[0] == 0.0:
+    #         Labels_img[ y+(Block_size-1)/2 : y+(Block_size-1)/2 + 3, x+(Block_size-1)/2 : x+(Block_size-1)/2 + 3 ] = 4
+    #         if args.visual_output:
+    #             image_footprint[y+(Block_size-1)/2 : y+(Block_size-1)/2 + 3, x+(Block_size-1)/2 : x+(Block_size-1)/2 + 3, :] += 0.04
+    #             hair_color = (0,255,0)
 
-        if hair_prediction[0] == 1.0:
-            Labels_img[ y+(Block_size-1)/2 : y+(Block_size-1)/2 + 3, x+(Block_size-1)/2 : x+(Block_size-1)/2 + 3 ] = 3
-            if args.visual_output:
-                image_footprint[y+(Block_size-1)/2 : y+(Block_size-1)/2 + 3, x+(Block_size-1)/2 : x+(Block_size-1)/2 + 3, :] -= 0.04
-                hair_color = (0,0,255)
+    #     if args.visual_output:
+    #         clone = image_footprint.copy()
+    #         cv2.rectangle(clone, ( x+(Block_size-1)/2, y+(Block_size-1)/2 ), (x+(Block_size-1)/2 + 3, y+(Block_size-1)/2 + 3), hair_color, 2)
+    #         cv2.imshow("Window", np.fliplr(clone.reshape(-1,3)).reshape(clone.shape))
+    #         cv2.waitKey(1)
+    #         time.sleep(0.025)
 
-        elif hair_prediction[0] == 0.0:
-            Labels_img[ y+(Block_size-1)/2 : y+(Block_size-1)/2 + 3, x+(Block_size-1)/2 : x+(Block_size-1)/2 + 3 ] = 4
-            if args.visual_output:
-                image_footprint[y+(Block_size-1)/2 : y+(Block_size-1)/2 + 3, x+(Block_size-1)/2 : x+(Block_size-1)/2 + 3, :] += 0.04
-                hair_color = (0,255,0)
+    # toc = time.clock()
 
-        if args.visual_output:
-            clone = image_footprint.copy()
-            cv2.rectangle(clone, ( x+(Block_size-1)/2, y+(Block_size-1)/2 ), (x+(Block_size-1)/2 + 3, y+(Block_size-1)/2 + 3), hair_color, 2)
-            cv2.imshow("Window", np.fliplr(clone.reshape(-1,3)).reshape(clone.shape))
-            cv2.waitKey(1)
-            time.sleep(0.025)
+    # print "Hair Segmentstion completed"
+    # print "Processing time :", toc - tic, "seconds"
+    # print "Post-Processing"
 
-    toc = time.clock()
-
-    print "Hair Segmentstion completed"
-    print "Processing time :", toc - tic, "seconds"
-    print "Post-Processing"
-
-    tic = time.clock()
-    Labels_img[Labels_img == 0] = 4
-    Labels_img  = Labels_img - 1
-    nseg = int((org_image_rgb.shape[0] + org_image_rgb.shape[1] ) * 0.8)
+    # tic = time.clock()
+    # Labels_img[Labels_img == 0] = 4
+    # Labels_img  = Labels_img - 1
+    # nseg = int((org_image_rgb.shape[0] + org_image_rgb.shape[1] ) * 0.8)
     
-    labels_post                  = segmentation.slic(org_image_rgb, n_segments=nseg, sigma=5, enforce_connectivity=True, slic_zero=True)
-    labels_post                  = labels_post + 4
-    labels_post[Labels_img == 0] = 0
-    labels_post[Labels_img == 1] = 1
-    labels_post_org              = labels_post.copy()
+    # labels_post                  = segmentation.slic(org_image_rgb, n_segments=nseg, sigma=5, enforce_connectivity=True, slic_zero=True)
+    # labels_post                  = labels_post + 4
+    # labels_post[Labels_img == 0] = 0
+    # labels_post[Labels_img == 1] = 1
+    # labels_post_org              = labels_post.copy()
 
-    for (i, segVal) in enumerate(np.unique(labels_post_org)):
-        if segVal == 0 or segVal == 1:
-            continue
+    # for (i, segVal) in enumerate(np.unique(labels_post_org)):
+    #     if segVal == 0 or segVal == 1:
+    #         continue
 
-        mask_seg                            = np.zeros(org_image_rgb.shape[:2], dtype = int)
-        mask_seg[labels_post_org == segVal] = 1
-        mask_newhair                        = np.zeros(org_image_rgb.shape[:2], dtype = int)
-        mask_newhair[Labels_img == 2]       = 1
-        mask_newnonhair                     = np.zeros(org_image_rgb.shape[:2], dtype = int)
-        mask_newnonhair[Labels_img == 3]    = 1
-        Hair_overlap                        = np.logical_and(mask_seg, mask_newhair)
-        NonHair_overlap                     = np.logical_and(mask_seg, mask_newnonhair)
+    #     mask_seg                            = np.zeros(org_image_rgb.shape[:2], dtype = int)
+    #     mask_seg[labels_post_org == segVal] = 1
+    #     mask_newhair                        = np.zeros(org_image_rgb.shape[:2], dtype = int)
+    #     mask_newhair[Labels_img == 2]       = 1
+    #     mask_newnonhair                     = np.zeros(org_image_rgb.shape[:2], dtype = int)
+    #     mask_newnonhair[Labels_img == 3]    = 1
+    #     Hair_overlap                        = np.logical_and(mask_seg, mask_newhair)
+    #     NonHair_overlap                     = np.logical_and(mask_seg, mask_newnonhair)
 
-        if np.count_nonzero(Hair_overlap) < np.count_nonzero(NonHair_overlap):
-            labels_post[labels_post == segVal] = 3
-        else:
-            labels_post[labels_post == segVal] = 2
+    #     if np.count_nonzero(Hair_overlap) < np.count_nonzero(NonHair_overlap):
+    #         labels_post[labels_post == segVal] = 3
+    #     else:
+    #         labels_post[labels_post == segVal] = 2
 
-        if args.visual_output:
-            Seg_image = color.label2rgb(labels_post, org_image_rgb, kind='overlay')
-            Seg_image_boundaries = segmentation.mark_boundaries(Seg_image, labels_post, (0, 0, 0))
-            cv2.imshow("hairs", np.fliplr(Seg_image_boundaries.reshape(-1,3)).reshape(Seg_image_boundaries.shape))
-            cv2.waitKey(1)
-            time.sleep(0.025)
-    toc = time.clock()
+    #     if args.visual_output:
+    #         Seg_image = color.label2rgb(labels_post, org_image_rgb, kind='overlay')
+    #         Seg_image_boundaries = segmentation.mark_boundaries(Seg_image, labels_post, (0, 0, 0))
+    #         cv2.imshow("hairs", np.fliplr(Seg_image_boundaries.reshape(-1,3)).reshape(Seg_image_boundaries.shape))
+    #         cv2.waitKey(1)
+    #         time.sleep(0.025)
+    # toc = time.clock()
 
-    print "Post-Processing completed"
-    print "Processing time :", toc - tic, "seconds"
+    # print "Post-Processing completed"
+    # print "Processing time :", toc - tic, "seconds"
 
-    Seg_image = color.label2rgb(labels_post, org_image_rgb, kind='overlay')
-    Seg_image_boundaries = segmentation.mark_boundaries(Seg_image, labels_post, (0, 0, 0))
-    Labels_img_bin = labels_post.copy() + 1
-    Labels_img_bin[Labels_img_bin == 3] = 1
-    Labels_img_bin[Labels_img_bin == 4] = 2
-    Labels_img_bin[Labels_img_bin == 2] = 0
+    # Seg_image = color.label2rgb(labels_post, org_image_rgb, kind='overlay')
+    # Seg_image_boundaries = segmentation.mark_boundaries(Seg_image, labels_post, (0, 0, 0))
+    # Labels_img_bin = labels_post.copy() + 1
+    # Labels_img_bin[Labels_img_bin == 3] = 1
+    # Labels_img_bin[Labels_img_bin == 4] = 2
+    # Labels_img_bin[Labels_img_bin == 2] = 0
 
-    np.save(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairSegmentation-Result.npy", Labels_img_bin)
-    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairSegmentation-Hair-region.png", Labels_img_bin.astype(np.int)*255)
-    Seg_image_boundaries = Seg_image_boundaries * 255
-    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairSegmentation-Result.png", np.fliplr(Seg_image_boundaries.reshape(-1,3)).reshape(Seg_image_boundaries.shape))
+    # np.save(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairSegmentation-Result.npy", Labels_img_bin)
+    # cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairSegmentation-Hair-region.png", Labels_img_bin.astype(np.int)*255)
+    # Seg_image_boundaries = Seg_image_boundaries * 255
+    # cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairSegmentation-Result.png", np.fliplr(Seg_image_boundaries.reshape(-1,3)).reshape(Seg_image_boundaries.shape))
 
-    print "Processing finished."
+    # print "Processing finished."

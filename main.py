@@ -236,9 +236,8 @@ for n in range(len(org_images)):
     NonHair_region       = output_image <= nonhair_thr_relative
     print Hair_region
     print Hair_region[0]
-    print Hair_region[1]
-    print Hair_region[2]
-    print Hair_region[3]
+    print Hair_region.astype(np.int)
+    print Hair_region.astype(np.int)[0]
     cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region.png", Hair_region.astype(np.int)*255)
     cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-NonHair-region.png", NonHair_region.astype(np.int)*255)
 

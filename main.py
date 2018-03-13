@@ -257,6 +257,8 @@ for n in range(len(org_images)):
                 left = x
             if right < x + detect_step and x + detect_step < NonHair_region.shape[1] - detect_step:
                 right = x + detect_step
+    print left
+    print right
     for x in xrange(NonHair_region.shape[1]):
         for y in xrange(NonHair_region.shape[0]):
             if x>= left and x <= right:

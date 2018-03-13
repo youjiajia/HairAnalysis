@@ -277,7 +277,7 @@ for n in range(len(org_images)):
                     newimg[:][y][x] = 255
                 else:
                     newimg[:][y][x] = 128
-    cv2.imwrite(args.output_dir + "finall.png", NonHair_region.astype(np.int)*255)
+    cv2.imwrite(args.output_dir + "finall.png", newimg)
     # if args.visual_output_save:
     #     image_footprint = image_footprint * 255
     #     cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-HairProb" + ".jpg", np.fliplr(image_footprint.reshape(-1,3)).reshape(image_footprint.shape))

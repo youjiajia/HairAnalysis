@@ -236,12 +236,10 @@ for n in range(len(org_images)):
     NonHair_region       = output_image <= nonhair_thr_relative
     topborder = []
     bottomborder = []
-    for (x, y) in sliding_window(Hair_region, stepSize = detect_step):
+    for (x, y) in sliding_window(Hair_region, stepSize = 1):
         value = Hair_region[y][x]
         if value and  (y-1 > 0 and Hair_region[y-1][x] != value) or (Hair_region[y][x-1] and x-1 > 0 == value):
             topborder.append((x,y))
-        x += detect_step
-        y += detect_step
         if y < Hair_region.shape[0] and x < Hair_region.shape[1]:
             value = Hair_region[y][x]
             if value and (y+1 < Hair_region.shape[0] and Hair_region[y+1][x] != value) or (x+1 < Hair_region.shape[0] and Hair_region[y][x+1] == value):

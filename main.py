@@ -249,17 +249,17 @@ for n in range(len(org_images)):
     for (x,y) in topborder:
         value = Hair_region[y][x]
         for i in xrange(detect_step):
-            if y-i-1 >= 0:
-                Hair_region[y-i-1][x] = value
-            if x-i-1 >= 0:
-                Hair_region[y][x-i-1] = value
+            if y-i >= 0:
+                Hair_region[y-i][x] = value
+            if x-i >= 0:
+                Hair_region[y][x-i] = value
     for (x,y) in bottomborder:
         value = Hair_region[y][x]
         for i in xrange(detect_step):
-            if y+i+1 < Hair_region.shape[0]:
-                Hair_region[y+i+1][x] = value
-            if x+i+1 < Hair_region.shape[1]:
-                Hair_region[y][x+i+1] = value
+            if y+i < Hair_region.shape[0]:
+                Hair_region[y+i][x] = value
+            if x+i < Hair_region.shape[1]:
+                Hair_region[y][x+i] = value
     cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region2.png", Hair_region.astype(np.int)*255)
     cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-NonHair-region2.png", NonHair_region.astype(np.int)*255)
 

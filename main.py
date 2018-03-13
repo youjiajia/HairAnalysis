@@ -238,7 +238,7 @@ for n in range(len(org_images)):
     bottomborder = []
     for (x, y) in sliding_window(Hair_region, stepSize = detect_step):
         value = Hair_region[y][x]
-        if (y-1 > 0 and Hair_region[y-1][x] != value) or (Hair_region[y][x-1] and x-1 > 0 == value):
+        if value and  (y-1 > 0 and Hair_region[y-1][x] != value) or (Hair_region[y][x-1] and x-1 > 0 == value):
             topborder.append((x,y))
         x += detect_step
         y += detect_step

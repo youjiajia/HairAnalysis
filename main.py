@@ -234,14 +234,31 @@ for n in range(len(org_images)):
     nonhair_thr_relative = int(ceil(float( output_image.max() * nonhair_thr ) / 100))
     Hair_region          = output_image >= hair_thr_relative
     NonHair_region       = output_image <= nonhair_thr_relative
-    with open("test", 'w') as test:
-        test.write(Hair_region)
-    with open("test2", 'w') as test2:
-        test2.write(NonHair_region)
+    topborder = []
+    bottomborder = []
     for (x, y) in sliding_window(Hair_region, stepSize = detect_step):
-        print Hair_region[y][x]
-    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region.png", Hair_region.astype(np.int)*255)
-    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-NonHair-region.png", NonHair_region.astype(np.int)*255)
+        value = Hair_region[y][x]
+        if (Hair_region[y-1][x] and Hair_region[y-1][x] != value) or (Hair_region[y][x-1] and Hair_region[y][x-1] == value):
+            topborder.append((x,y))
+        x += detect_step
+        y += detect_step
+        value = Hair_region[y][x]
+        if value and (Hair_region[y+1][x] and Hair_region[y+1][x] != value) or (Hair_region[y][x+1] and Hair_region[y][x+1] == value):
+            bottomborder.append((x,y))
+    for (x,y) in topborder:
+        value = Hair_region[y][x]
+        if Hair_region[y-1][x]:
+            Hair_region[y-1][x] = value
+        if Hair_region[y][x-1]:
+            Hair_region[y][x-1] = value
+    for (x,y) in bottomborder:
+        value = Hair_region[y][x]
+        if Hair_region[y+1][x]:
+            Hair_region[y+1][x] = value
+        if Hair_region[y][x+1]:
+            Hair_region[y][x+1] = value
+    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region2.png", Hair_region.astype(np.int)*255)
+    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-NonHair-region2.png", NonHair_region.astype(np.int)*255)
 
     alpha = closed_form_matting.closed_form_matting_with_trimap(org_image_rgb, NonHair_region.astype(np.int)*255);
     cv2.imwrite(args.output_dir + "testalpha.png", alpha * 255.0)

@@ -277,7 +277,7 @@ for n in range(len(org_images)):
                     newimg[:][y][x] = 255
                 else:
                     newimg[:][y][x] = 128
-            if (x < detect_step and y < detect_step) or (y >= NonHair_region.shape[0]-detect_step and x >= NonHair_region.shape[0]-detect_step) or (y >= NonHair_region.shape[0]-detect_step and y < detect_step) or (x < detect_step and x >= NonHair_region.shape[0]-detect_step):
+            elif (x < detect_step and y < detect_step) or (y >= NonHair_region.shape[0]-detect_step and x >= NonHair_region.shape[1]-detect_step) or (y >= NonHair_region.shape[0]-detect_step and x < detect_step) or (y < detect_step and x >= NonHair_region.shape[1]-detect_step):
                 newimg[:][y][x] = 0
             else:
                 newimg[:][y][x] = 128

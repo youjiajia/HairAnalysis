@@ -280,7 +280,7 @@ for n in range(len(org_images)):
     cv2.imwrite(args.output_dir + "finall.png", newimg)
     trimap = newimg / 255.0
     image = cv2.imread("./Data/Example.jpg", cv2.IMREAD_COLOR) / 255.0
-    output = closed_form_matting_with_trimap(image, trimap)
+    output = closed_form_matting.closed_form_matting_with_trimap(image, trimap)
     cv2.imwrite(args.output_dir + "finall2.png", output * 255.0)
     # if args.visual_output_save:
     #     image_footprint = image_footprint * 255

@@ -235,6 +235,8 @@ for n in range(len(org_images)):
     Hair_region          = output_image >= hair_thr_relative
     NonHair_region       = output_image <= nonhair_thr_relative
     getborder = []
+    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region.png", Hair_region.astype(np.int)*255)
+    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-NonHair-region.png", NonHair_region.astype(np.int)*255)
     for (x, y) in sliding_window(Hair_region, stepSize = detect_step):
         value = Hair_region[y][x]
         if value and  ((y-detect_step > 0 and Hair_region[y-detect_step][x] != value) or (x-detect_step > 0 and Hair_region[y][x-detect_step] != value) or (y+detect_step < Hair_region.shape[0] and Hair_region[y+detect_step][x] != value) or (x+detect_step < Hair_region.shape[1] and Hair_region[y][x+detect_step] != value)):
@@ -267,7 +269,15 @@ for n in range(len(org_images)):
     alpha = closed_form_matting.closed_form_matting_with_trimap(org_image_rgb, NonHair_region.astype(np.int)*255);
     cv2.imwrite(args.output_dir + "testalpha.png", alpha * 255.0)
     cv2.imwrite(args.output_dir + "testalpha2.png", output_image * 255.0)
-    print alpha
+    newimg=np.zeros([NonHair_region.shape[0],NonHair_region.shape[1],3],np.uint8)
+    for x in xrange(NonHair_region.shape[1]):
+        for y in xrange(NonHair_region.shape[0]):
+            if x>= left and x <= right:
+                if Hair_region[y][x]:
+                    newimg[:][y][x] = 255
+                else:
+                    newimg[:][y][x] = 128
+    cv2.imwrite(args.output_dir + "finall.png", NonHair_region.astype(np.int)*255)
     # if args.visual_output_save:
     #     image_footprint = image_footprint * 255
     #     cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-HairProb" + ".jpg", np.fliplr(image_footprint.reshape(-1,3)).reshape(image_footprint.shape))

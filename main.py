@@ -238,13 +238,13 @@ for n in range(len(org_images)):
     bottomborder = []
     for (x, y) in sliding_window(Hair_region, stepSize = detect_step):
         value = Hair_region[y][x]
-        if (Hair_region[y-1][x] and Hair_region[y-1][x] != value) or (Hair_region[y][x-1] and Hair_region[y][x-1] == value):
+        if (y-1 > 0 and Hair_region[y-1][x] != value) or (Hair_region[y][x-1] and x-1 > 0 == value):
             topborder.append((x,y))
         x += detect_step
         y += detect_step
-        if Hair_region[y] is not None and Hair_region[y][x]:
+        if y < Hair_region.shape[0] and x < Hair_region.shape[1]:
             value = Hair_region[y][x]
-            if value and (Hair_region[y+1][x] and Hair_region[y+1][x] != value) or (Hair_region[y][x+1] and Hair_region[y][x+1] == value):
+            if value and (y+1 < Hair_region.shape[0] and Hair_region[y+1][x] != value) or (x+1 < Hair_region.shape[0] and Hair_region[y][x+1] == value):
                 bottomborder.append((x,y))
     for (x,y) in topborder:
         value = Hair_region[y][x]

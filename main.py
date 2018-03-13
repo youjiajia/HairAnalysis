@@ -222,12 +222,12 @@ for n in range(len(org_images)):
 
     if unique_counts_val.get(0) == output_image.shape[0] * output_image.shape[1] or output_image.max() <= 5:
         print "Processing finished. All pixels in the input image are labelled as nonhair."
-        cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region.png", output_image.astype(np.int))
+        cv2.imwrite(args.output_dir + "Hair-region.png", output_image.astype(np.int))
         continue
     elif unique_counts_val.get(49) == output_image.shape[0] * output_image.shape[1]:
         print "Processing finished. All pixels in the input image are labelled as hair."
         output_image[output_image == 49] = 255
-        cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region.png", output_image.astype(np.int))
+        cv2.imwrite(args.output_dir + "Hair-region.png", output_image.astype(np.int))
         continue
 
     hair_thr_relative    = int(ceil(float( output_image.max() * hair_thr ) / 100))
@@ -235,8 +235,8 @@ for n in range(len(org_images)):
     Hair_region          = output_image >= hair_thr_relative
     NonHair_region       = output_image <= nonhair_thr_relative
     getborder = []
-    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region.png", Hair_region.astype(np.int)*255)
-    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-NonHair-region.png", NonHair_region.astype(np.int)*255)
+    cv2.imwrite(args.output_dir + "Hair-region.png", Hair_region.astype(np.int)*255)
+    cv2.imwrite(args.output_dir + "NonHair-region.png", NonHair_region.astype(np.int)*255)
     for (x, y) in sliding_window(Hair_region, stepSize = detect_step):
         value = Hair_region[y][x]
         if value and  ((y-detect_step > 0 and Hair_region[y-detect_step][x] != value) or (x-detect_step > 0 and Hair_region[y][x-detect_step] != value) or (y+detect_step < Hair_region.shape[0] and Hair_region[y+detect_step][x] != value) or (x+detect_step < Hair_region.shape[1] and Hair_region[y][x+detect_step] != value)):
@@ -263,8 +263,8 @@ for n in range(len(org_images)):
                 NonHair_region[y][x] = False
             else:
                 NonHair_region[y][x] = True
-    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region2.png", Hair_region.astype(np.int)*255)
-    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-NonHair-region2.png", NonHair_region.astype(np.int)*255)
+    cv2.imwrite(args.output_dir + "Hair-region2.png", Hair_region.astype(np.int)*255)
+    cv2.imwrite(args.output_dir + "NonHair-region2.png", NonHair_region.astype(np.int)*255)
 
     alpha = closed_form_matting.closed_form_matting_with_trimap(org_image_rgb, NonHair_region.astype(np.int)*255);
     cv2.imwrite(args.output_dir + "testalpha.png", alpha * 255.0)

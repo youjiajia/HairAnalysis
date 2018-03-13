@@ -269,7 +269,7 @@ for n in range(len(org_images)):
     alpha = closed_form_matting.closed_form_matting_with_trimap(org_image_rgb, NonHair_region.astype(np.int)*255);
     cv2.imwrite(args.output_dir + "testalpha.png", alpha * 255.0)
     cv2.imwrite(args.output_dir + "testalpha2.png", output_image * 255.0)
-    newimg=np.zeros([NonHair_region.shape[0],NonHair_region.shape[1],3],np.uint8)
+    newimg=np.zeros([NonHair_region.shape[1],NonHair_region.shape[0],3],np.uint8)
     for x in xrange(NonHair_region.shape[1]):
         for y in xrange(NonHair_region.shape[0]):
             if x>= left and x <= right:

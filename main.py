@@ -243,9 +243,9 @@ for n in range(len(org_images)):
         for i in xrange(detect_step):
             for i2 in xrange(detect_step):
                 if y-i >= 0 and x-i2 > 0:
-                    Hair_region[y-i][x-i2] = False
+                    Hair_region[y+i][x+i2] = False
                 if x-i >= 0 and y-i2 >0:
-                    Hair_region[y-i2][x-i] = False
+                    Hair_region[y+i2][x+i] = False
     cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region2.png", Hair_region.astype(np.int)*255)
     cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-NonHair-region2.png", NonHair_region.astype(np.int)*255)
 

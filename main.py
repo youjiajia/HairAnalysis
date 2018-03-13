@@ -235,7 +235,7 @@ for n in range(len(org_images)):
     Hair_region          = output_image >= hair_thr_relative
     NonHair_region       = output_image <= nonhair_thr_relative
     for (x, y) in sliding_window(Hair_region, stepSize = detect_step):
-        print Hair_region[x][y]
+        print Hair_region[y][x]
     cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region.png", Hair_region.astype(np.int)*255)
     cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-NonHair-region.png", NonHair_region.astype(np.int)*255)
 

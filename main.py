@@ -237,7 +237,7 @@ for n in range(len(org_images)):
     with open("test", 'w') as test:
         test.write(Hair_region)
     with open("test2", 'w') as test2:
-        test.write(NonHair_region)
+        test2.write(NonHair_region)
     for (x, y) in sliding_window(Hair_region, stepSize = detect_step):
         print Hair_region[y][x]
     cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region.png", Hair_region.astype(np.int)*255)

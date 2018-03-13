@@ -28,11 +28,11 @@ class TestMatting(unittest.TestCase):
         self.assertLess(sad_background, 1e-2)
 
     def test_matting_with_trimap(self):
-        image = cv2.imread('testdata/source.png', cv2.IMREAD_COLOR) / 255.0
-        trimap = cv2.imread('testdata/trimap.png', cv2.IMREAD_GRAYSCALE) / 255.0
+        image = cv2.imread('../Data/Example.jpg', cv2.IMREAD_COLOR) / 255.0
+        trimap = cv2.imread('../Output/finall.png', cv2.IMREAD_GRAYSCALE) / 255.0
 
         alpha = closed_form_matting.closed_form_matting_with_trimap(image, trimap)
-        cv2.imwrite('../Output/output_alpha.png', alpha * 255.0)
+        cv2.imwrite('../Output/finall2.png', alpha * 255.0)
         # reference_alpha = cv2.imread('testdata/output_alpha.png', cv2.IMREAD_GRAYSCALE) / 255.0
 
         # sad_alpha = np.mean(np.abs(alpha - reference_alpha))

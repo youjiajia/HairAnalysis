@@ -105,7 +105,7 @@ def LTP_feature_extraction(image_block, reorder_vector, t, exp, uPattern_values)
 
 ###########################  Data Loading  #############################
 
-org_images          = ["./Data/Example.jpg"]
+org_images          = sorted(glob.glob(args.input_dir+"*.jpg"))
 my_deploy_prototext = args.caffeNet_dir + 'deploy.prototxt'
 my_caffemodel       = args.caffeNet_dir + 'model_caffenet.caffemodel'
 my_meanfile         = args.caffeNet_dir + 'mean.npy'
@@ -162,126 +162,127 @@ my_clf_det          = my_clf_det.fit(train_feature, train_label)
 
 ################### Detection: Classifier Testing #######################
 
-n=0
+for n in range(len(org_images)):
 
+    print "Processing: ", org_images[n].split('/')[-1:][0][:-4]
 
-org_image_rgb        = load_image(org_images[n])
-org_image            = color.rgb2gray(org_image_rgb)
-border_org_image_rgb = cv2.copyMakeBorder(org_image_rgb, patch_dim, patch_dim, patch_dim, patch_dim, cv2.BORDER_CONSTANT,value=cv2.mean(org_image_rgb)[:3])
-border_org_image     = cv2.copyMakeBorder(org_image, patch_dim, patch_dim, patch_dim, patch_dim, cv2.BORDER_CONSTANT,value=cv2.mean(org_image)[0])
+    org_image_rgb        = load_image(org_images[n])
+    org_image            = color.rgb2gray(org_image_rgb)
+    border_org_image_rgb = cv2.copyMakeBorder(org_image_rgb, patch_dim, patch_dim, patch_dim, patch_dim, cv2.BORDER_CONSTANT,value=cv2.mean(org_image_rgb)[:3])
+    border_org_image     = cv2.copyMakeBorder(org_image, patch_dim, patch_dim, patch_dim, patch_dim, cv2.BORDER_CONSTANT,value=cv2.mean(org_image)[0])
+    
+    if args.visual_output_save or args.visual_output:
+        image_footprint  = border_org_image_rgb.copy()
+    output_image         = np.zeros(border_org_image_rgb.shape[:2], dtype = int)
 
-if args.visual_output_save or args.visual_output:
-    image_footprint  = border_org_image_rgb.copy()
-output_image         = np.zeros(border_org_image_rgb.shape[:2], dtype = int)
+    print "Hair Detection at patch-level"
 
-print "Hair Detection at patch-level"
+    # tic = time.clock()
+    tic = time.time()
+    num = 0
+    for (x, y) in sliding_window(border_org_image, stepSize = detect_step):
+        num += 1
+        print time.time()
+        if (y + patch_dim > border_org_image.shape[0]) or (x + patch_dim > border_org_image.shape[1]):
+            continue
+        image_block_rgb             = border_org_image_rgb[ y:y+patch_dim , x:x+patch_dim, :]
+        image_block                 = border_org_image[ y:y+patch_dim , x:x+patch_dim]
+        image_block_rgb_227         = image_block_rgb[2:229,2:229,:]
+        net.blobs["data"].data[...] = transformer.preprocess("data", image_block_rgb_227)
+        out                         = net.forward()
+        fVector                     = net.blobs['fc7'].data[0].copy()
+        feature_array               = imp.transform(fVector.reshape(1,-1))
+        feature_array               = scalerDet.transform(feature_array)
+        hair_prediction             = my_clf_det.predict(feature_array)
+        if hair_prediction[0] == 1.0:
+            output_image[ y:y+patch_dim, x:x+patch_dim ] += 1
+            if args.visual_output_save or args.visual_output:
+                image_footprint[y:y+patch_dim, x:x+patch_dim, :] -= 0.04
+                hair_color = (0,0,255)
+        elif hair_prediction[0] == 0.0:
+            if args.visual_output_save or args.visual_output:
+                hair_color = (0,255,0)
 
-# tic = time.clock()
-tic = time.time()
-num = 0
-for (x, y) in sliding_window(border_org_image, stepSize = detect_step):
-    num += 1
-    print time.time()
-    if (y + patch_dim > border_org_image.shape[0]) or (x + patch_dim > border_org_image.shape[1]):
+        if args.visual_output:
+            clone = image_footprint.copy()
+            cv2.rectangle(clone, (x, y ), (x+patch_dim, y+patch_dim), hair_color, 2)
+            clone = clone[patch_dim:org_image.shape[0], patch_dim:org_image.shape[1]]
+            cv2.imshow("Window", np.fliplr(clone.reshape(-1,3)).reshape(clone.shape))
+            cv2.waitKey(1)
+            time.sleep(0.025)
+    # toc = time.clock()
+    toc = time.time()
+
+    print "Hair Detection completed"
+    print "Processing time: ", toc-tic, "seconds"
+
+    output_image           = output_image [patch_dim : patch_dim + org_image.shape[0], patch_dim : patch_dim + org_image.shape[1]]
+    unique_val, counts_val = np.unique(output_image, return_counts=True)
+    unique_counts_val      = dict(zip(unique_val, counts_val))
+
+    if unique_counts_val.get(0) == output_image.shape[0] * output_image.shape[1] or output_image.max() <= 5:
+        print "Processing finished. All pixels in the input image are labelled as nonhair."
+        cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region.png", output_image.astype(np.int))
         continue
-    image_block_rgb             = border_org_image_rgb[ y:y+patch_dim , x:x+patch_dim, :]
-    image_block                 = border_org_image[ y:y+patch_dim , x:x+patch_dim]
-    image_block_rgb_227         = image_block_rgb[2:229,2:229,:]
-    net.blobs["data"].data[...] = transformer.preprocess("data", image_block_rgb_227)
-    out                         = net.forward()
-    fVector                     = net.blobs['fc7'].data[0].copy()
-    feature_array               = imp.transform(fVector.reshape(1,-1))
-    feature_array               = scalerDet.transform(feature_array)
-    hair_prediction             = my_clf_det.predict(feature_array)
-    if hair_prediction[0] == 1.0:
-        output_image[ y:y+patch_dim, x:x+patch_dim ] += 1
-        if args.visual_output_save or args.visual_output:
-            image_footprint[y:y+patch_dim, x:x+patch_dim, :] -= 0.04
-            hair_color = (0,0,255)
-    elif hair_prediction[0] == 0.0:
-        if args.visual_output_save or args.visual_output:
-            hair_color = (0,255,0)
+    elif unique_counts_val.get(49) == output_image.shape[0] * output_image.shape[1]:
+        print "Processing finished. All pixels in the input image are labelled as hair."
+        output_image[output_image == 49] = 255
+        cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region.png", output_image.astype(np.int))
+        continue
 
-    if args.visual_output:
-        clone = image_footprint.copy()
-        cv2.rectangle(clone, (x, y ), (x+patch_dim, y+patch_dim), hair_color, 2)
-        clone = clone[patch_dim:org_image.shape[0], patch_dim:org_image.shape[1]]
-        cv2.imshow("Window", np.fliplr(clone.reshape(-1,3)).reshape(clone.shape))
-        cv2.waitKey(1)
-        time.sleep(0.025)
-# toc = time.clock()
-toc = time.time()
+    hair_thr_relative    = int(ceil(float( output_image.max() * hair_thr ) / 100))
+    nonhair_thr_relative = int(ceil(float( output_image.max() * nonhair_thr ) / 100))
+    Hair_region          = output_image >= hair_thr_relative
+    NonHair_region       = output_image <= nonhair_thr_relative
+    getborder = []
+    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region.png", Hair_region.astype(np.int)*255)
+    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-NonHair-region.png", NonHair_region.astype(np.int)*255)
+    for (x, y) in sliding_window(Hair_region, stepSize = detect_step):
+        value = Hair_region[y][x]
+        if value and  ((y-detect_step > 0 and Hair_region[y-detect_step][x] != value) or (x-detect_step > 0 and Hair_region[y][x-detect_step] != value) or (y+detect_step < Hair_region.shape[0] and Hair_region[y+detect_step][x] != value) or (x+detect_step < Hair_region.shape[1] and Hair_region[y][x+detect_step] != value)):
+            getborder.append((x,y))
+    for (x,y) in getborder:
+        for i in xrange(detect_step):
+            for i2 in xrange(detect_step):
+                if y-i >= 0 and x-i2 > 0:
+                    Hair_region[y+i][x+i2] = False
+                if x-i >= 0 and y-i2 >0:
+                    Hair_region[y+i2][x+i] = False
+    left = NonHair_region.shape[1]
+    right = 0
+    for (x, y) in sliding_window(NonHair_region, stepSize = detect_step):
+        value = NonHair_region[y][x]
+        if value and  ((x-detect_step > 0 and NonHair_region[y][x-detect_step] != value) or (x+detect_step < NonHair_region.shape[1] and NonHair_region[y][x+detect_step] != value)):
+            if left > x and x > 0:
+                left = x
+            if right < x + detect_step and x + detect_step < NonHair_region.shape[1] - detect_step:
+                right = x + detect_step
+    for x in xrange(NonHair_region.shape[1]):
+        for y in xrange(NonHair_region.shape[0]):
+            if x>= left and x <= right:
+                NonHair_region[y][x] = False
+            else:
+                NonHair_region[y][x] = True
+    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region2.png", Hair_region.astype(np.int)*255)
+    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-NonHair-region2.png", NonHair_region.astype(np.int)*255)
 
-print "Hair Detection completed"
-print "Processing time: ", toc-tic, "seconds"
-
-output_image           = output_image [patch_dim : patch_dim + org_image.shape[0], patch_dim : patch_dim + org_image.shape[1]]
-unique_val, counts_val = np.unique(output_image, return_counts=True)
-unique_counts_val      = dict(zip(unique_val, counts_val))
-
-if unique_counts_val.get(0) == output_image.shape[0] * output_image.shape[1] or output_image.max() <= 5:
-    print "Processing finished. All pixels in the input image are labelled as nonhair."
-    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region.png", output_image.astype(np.int))
-    continue
-elif unique_counts_val.get(49) == output_image.shape[0] * output_image.shape[1]:
-    print "Processing finished. All pixels in the input image are labelled as hair."
-    output_image[output_image == 49] = 255
-    cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region.png", output_image.astype(np.int))
-    continue
-
-hair_thr_relative    = int(ceil(float( output_image.max() * hair_thr ) / 100))
-nonhair_thr_relative = int(ceil(float( output_image.max() * nonhair_thr ) / 100))
-Hair_region          = output_image >= hair_thr_relative
-NonHair_region       = output_image <= nonhair_thr_relative
-getborder = []
-cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region.png", Hair_region.astype(np.int)*255)
-cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-NonHair-region.png", NonHair_region.astype(np.int)*255)
-for (x, y) in sliding_window(Hair_region, stepSize = detect_step):
-    value = Hair_region[y][x]
-    if value and  ((y-detect_step > 0 and Hair_region[y-detect_step][x] != value) or (x-detect_step > 0 and Hair_region[y][x-detect_step] != value) or (y+detect_step < Hair_region.shape[0] and Hair_region[y+detect_step][x] != value) or (x+detect_step < Hair_region.shape[1] and Hair_region[y][x+detect_step] != value)):
-        getborder.append((x,y))
-for (x,y) in getborder:
-    for i in xrange(detect_step):
-        for i2 in xrange(detect_step):
-            if y-i >= 0 and x-i2 > 0:
-                Hair_region[y+i][x+i2] = False
-            if x-i >= 0 and y-i2 >0:
-                Hair_region[y+i2][x+i] = False
-left = NonHair_region.shape[1]
-right = 0
-for (x, y) in sliding_window(NonHair_region, stepSize = detect_step):
-    value = NonHair_region[y][x]
-    if value and  ((x-detect_step > 0 and NonHair_region[y][x-detect_step] != value) or (x+detect_step < NonHair_region.shape[1] and NonHair_region[y][x+detect_step] != value)):
-        if left > x and x > 0:
-            left = x
-        if right < x + detect_step and x + detect_step < NonHair_region.shape[1] - detect_step:
-            right = x + detect_step
-for x in xrange(NonHair_region.shape[1]):
-    for y in xrange(NonHair_region.shape[0]):
-        if x>= left and x <= right:
-            NonHair_region[y][x] = False
-        else:
-            NonHair_region[y][x] = True
-cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region2.png", Hair_region.astype(np.int)*255)
-cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-NonHair-region2.png", NonHair_region.astype(np.int)*255)
-
-alpha = closed_form_matting.closed_form_matting_with_trimap(org_image_rgb, NonHair_region.astype(np.int)*255);
-cv2.imwrite(args.output_dir + "testalpha.png", alpha * 255.0)
-cv2.imwrite(args.output_dir + "testalpha2.png", output_image * 255.0)
-newimg=np.zeros([NonHair_region.shape[0],NonHair_region.shape[1],3],np.uint8)
-for x in xrange(NonHair_region.shape[1]):
-    for y in xrange(NonHair_region.shape[0]):
-        if x>= left and x <= right:
-            if Hair_region[y][x]:
-                newimg[:][y][x] = 255
+    alpha = closed_form_matting.closed_form_matting_with_trimap(org_image_rgb, NonHair_region.astype(np.int)*255);
+    cv2.imwrite(args.output_dir + "testalpha.png", alpha * 255.0)
+    cv2.imwrite(args.output_dir + "testalpha2.png", output_image * 255.0)
+    newimg=np.zeros([NonHair_region.shape[0],NonHair_region.shape[1],3],np.uint8)
+    for x in xrange(NonHair_region.shape[1]):
+        for y in xrange(NonHair_region.shape[0]):
+            if x>= left and x <= right:
+                if Hair_region[y][x]:
+                    newimg[:][y][x] = 255
+                else:
+                    newimg[:][y][x] = 128
+            if (x < detect_step and y < detect_step) or (y >= NonHair_region.shape[0]-detect_step and x >= NonHair_region.shape[0]-detect_step) or (y >= NonHair_region.shape[0]-detect_step and y < detect_step) or (x < detect_step and x >= NonHair_region.shape[0]-detect_step):
+                newimg[:][y][x] = 0
             else:
                 newimg[:][y][x] = 128
-        if (x < detect_step and y < detect_step) or (y >= NonHair_region.shape[0]-detect_step and x >= NonHair_region.shape[0]-detect_step) or (y >= NonHair_region.shape[0]-detect_step and y < detect_step) or (x < detect_step and x >= NonHair_region.shape[0]-detect_step):
-            newimg[:][y][x] = 0
-        else:
-            newimg[:][y][x] = 128
-cv2.imwrite(args.output_dir + "finall.png", newimg)
-image = cv2.imread("./Data/Example.jpg", cv2.IMREAD_COLOR) / 255.0
-trimap = cv2.imread(args.output_dir + "finall.png", cv2.IMREAD_GRAYSCALE) / 255.0
-output = closed_form_matting.closed_form_matting_with_trimap(image, trimap)
-cv2.imwrite(args.output_dir + "finall2.png", output * 255.0)
+    cv2.imwrite(args.output_dir + "finall.png", newimg)
+    image = cv2.imread("./Data/Example.jpg", cv2.IMREAD_COLOR) / 255.0
+    trimap = cv2.imread(args.output_dir + "finall.png", cv2.IMREAD_GRAYSCALE) / 255.0
+    output = closed_form_matting.closed_form_matting_with_trimap(image, trimap)
+    cv2.imwrite(args.output_dir + "finall2.png", output * 255.0)

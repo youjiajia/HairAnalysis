@@ -244,7 +244,7 @@ for n in range(len(org_images)):
         y += detect_step
         if y < Hair_region.shape[0] and x < Hair_region.shape[1]:
             value = Hair_region[y][x]
-            if value and (y+detect_step < Hair_region.shape[0] and Hair_region[y+detect_step][x] != value) or (x+detect_step < Hair_region.shape[0] and Hair_region[y][x+detect_step] == value):
+            if value and (y+detect_step < Hair_region.shape[0] and Hair_region[y+detect_step][x] != value) or (x+detect_step < Hair_region.shape[1] and Hair_region[y][x+detect_step] == value):
                 bottomborder.append((x,y))
     for (x,y) in topborder:
         value = Hair_region[y][x]

@@ -277,10 +277,10 @@ for n in range(len(org_images)):
                     newimg[:][y][x] = 255
                 else:
                     newimg[:][y][x] = 128
-            elif (x < detect_step and y < detect_step) or (y >= NonHair_region.shape[0]-detect_step and x >= NonHair_region.shape[1]-detect_step) or (y >= NonHair_region.shape[0]-detect_step and x < detect_step) or (y < detect_step and x >= NonHair_region.shape[1]-detect_step):
-                newimg[:][y][x] = 0
-            else:
-                newimg[:][y][x] = 128
+            # elif (x < detect_step and y < detect_step) or (y >= NonHair_region.shape[0]-detect_step and x >= NonHair_region.shape[1]-detect_step) or (y >= NonHair_region.shape[0]-detect_step and x < detect_step) or (y < detect_step and x >= NonHair_region.shape[1]-detect_step):
+            #     newimg[:][y][x] = 0
+            # else:
+            #     newimg[:][y][x] = 128
     cv2.imwrite(args.output_dir + "finall.png", newimg)
     image = cv2.imread("./Data/Example.jpg", cv2.IMREAD_COLOR) / 255.0
     trimap = cv2.imread(args.output_dir + "finall.png", cv2.IMREAD_GRAYSCALE) / 255.0

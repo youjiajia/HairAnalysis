@@ -234,38 +234,18 @@ for n in range(len(org_images)):
     nonhair_thr_relative = int(ceil(float( output_image.max() * nonhair_thr ) / 100))
     Hair_region          = output_image >= hair_thr_relative
     NonHair_region       = output_image <= nonhair_thr_relative
-    topborder = []
-    bottomborder = []
+    getborder = []
     for (x, y) in sliding_window(Hair_region, stepSize = detect_step):
         value = Hair_region[y][x]
-        if value and  ((y-detect_step > 0 and Hair_region[y-detect_step][x] != value) or (Hair_region[y][x-detect_step] and x-detect_step > 0 == value)):
-            topborder.append((x,y))
-        x += detect_step
-        y += detect_step
-        if y < Hair_region.shape[0] and x < Hair_region.shape[1]:
-            value = Hair_region[y][x]
-            if value and ((y+detect_step < Hair_region.shape[0] and Hair_region[y+detect_step][x] != value) or (x+detect_step < Hair_region.shape[1] and Hair_region[y][x+detect_step] == value)):
-                bottomborder.append((x,y))
-    print topborder
-    print bottomborder
-    for (x,y) in topborder:
-        value = Hair_region[y][x]
-        print value
+        if value and  ((y-detect_step > 0 and Hair_region[y-detect_step][x] != value) or (x-detect_step > 0 and Hair_region[y][x-detect_step] != value) or (y+detect_step < Hair_region.shape[0] and Hair_region[y+detect_step][x] != value) or (x+detect_step < Hair_region.shape[1] and Hair_region[y][x+detect_step] != value)):
+            getborder.append((x,y))
+    for (x,y) in getborder:
         for i in xrange(detect_step):
             for i2 in xrange(detect_step):
                 if y-i >= 0 and x-i2 > 0:
-                    Hair_region[y-i][x-i2] = value
+                    Hair_region[y-i][x-i2] = False
                 if x-i >= 0 and y-i2 >0:
-                    Hair_region[y-i2][x-i] = value
-    for (x,y) in bottomborder:
-        print value
-        value = Hair_region[y][x]
-        for i in xrange(detect_step):
-            for i2 in xrange(detect_step):
-            if y+i < Hair_region.shape[0] and x+i2 < Hair_region.shape[1]:
-                Hair_region[y+i][x+i2] = value
-            if x+i < Hair_region.shape[1] and y+i2 < Hair_region.shape[1]:
-                Hair_region[y+i2][x+i] = value
+                    Hair_region[y-i2][x-i] = False
     cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-Hair-region2.png", Hair_region.astype(np.int)*255)
     cv2.imwrite(args.output_dir + org_images[n].split('/')[-1][:-4] + "-" + "HairDetection-NonHair-region2.png", NonHair_region.astype(np.int)*255)
 

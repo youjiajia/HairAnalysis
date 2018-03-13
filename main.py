@@ -252,10 +252,10 @@ for n in range(len(org_images)):
     right = 0
     for (x, y) in sliding_window(NonHair_region, stepSize = detect_step):
         value = NonHair_region[y][x]
-        if value and  ((x-detect_step > 0 and NonHair_region[y][x-detect_step] != value) or (x+detect_step < NonHair_region.shape[1] and NonHair_region[y][x+detect_step] != value)):
-            if left > x and x > 0:
+        if value and  ((x-detect_step > 0 and NonHair_region[y][x-detect_step] != value) or (x+detect_step < NonHair_region.shape[1] and NonHair_region[y][x+detect_step] != value) or (y-detect_step > 0 and NonHair_region[y-detect_step][x] != value) or (y+detect_step < NonHair_region.shape[0] and NonHair_region[y+detect_step][x] != value)):
+            if left > x and x >= 0:
                 left = x
-            if right < x + detect_step and x + detect_step < NonHair_region.shape[1] - detect_step:
+            if right <= x + detect_step and x + detect_step < NonHair_region.shape[1] - detect_step:
                 right = x + detect_step
     print left
     print right

@@ -1,18 +1,16 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from PIL import Image
 from scipy.misc import imresize,imsave, toimage
 
 
 import caffe
-import caffe
 
-caffe.set_mode_gpu()
+# caffe.set_mode_gpu()
 
-net = caffe.Net('voc-fcn8s-atonce/deploy.prototxt', '../../datasets/FacesPartLabels/saved/snapshot-head-_iter_325000.caffemodel', caffe.TEST)
+net = caffe.Net('voc-fcn8s-atonce/deploy.prototxt', './snapshot-face-hair-iter-300000.caffemodel', caffe.TEST)
 
-name = '4b.jpeg'
-im = Image.open('../../datasets/FacesPartLabels/' + name )
+name = 'Example.jpg'
+im = Image.open('./' + name )
 im = im.resize((250, 250), Image.ANTIALIAS)
 im = im.resize((512, 512), Image.ANTIALIAS)
 
@@ -54,7 +52,7 @@ out_im[:, :, 0] = hmap_hair * 255
 out_im[:, :, 1] = hmap_head * 255
 out_im[:, :, 2] = hmap_background * 255
 
-imsave('../../datasets/FacesPartLabels/test_' + name , out_im)
+imsave('./test_' + name , out_im)
 
 
 print 'Done'

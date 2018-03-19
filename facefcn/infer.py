@@ -5,7 +5,7 @@ from scipy.misc import imresize,imsave, toimage
 
 import caffe
 
-# caffe.set_mode_gpu()
+caffe.set_mode_cpu()
 
 net = caffe.Net('voc-fcn8s-atonce/deploy.prototxt', './snapshot-face-hair-iter-300000.caffemodel', caffe.TEST)
 

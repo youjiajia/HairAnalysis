@@ -56,7 +56,9 @@ def infer(name):
     print "Processing time: ", toc-tic, "seconds"
 
     firstpart,secondpart = name.split('.')
-    imsave('./test/test_' + firstpart + str(toc-tic) + '.' + secondpart , out_im)
+    imsave('./test/test_' + firstpart + '_time_' + str(toc-tic) + '.' + secondpart , out_im)
 
 
-infer('1.jpg')
+for i in xrange(1,11):
+    infer('{0}.jpg'.format(i))
+infer('11.jpg')

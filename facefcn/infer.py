@@ -59,4 +59,4 @@ def infer(name):
     imsave('./test/test_' + firstpart + '_time_' + str(toc-tic) + '.' + secondpart , out_im)
 
 
-infer('11.jepg')
+infer('11.jpeg')

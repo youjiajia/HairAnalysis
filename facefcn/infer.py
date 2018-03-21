@@ -4,11 +4,11 @@ from scipy.misc import imresize,imsave, toimage
 import time
 
 import caffe
-tic = time.time()
 caffe.set_mode_cpu()
 
 net = caffe.Net('voc-fcn8s-atonce/deploy.prototxt', './snapshot-face-hair-iter-300000.caffemodel', caffe.TEST)
 def infer(name):
+    tic = time.time()
     im = Image.open('./test/' + name )
     im = im.resize((250, 250), Image.ANTIALIAS)
     im = im.resize((512, 512), Image.ANTIALIAS)

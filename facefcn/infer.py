@@ -59,6 +59,4 @@ def infer(name):
     imsave('./test/test_' + firstpart + '_time_' + str(toc-tic) + '.' + secondpart , out_im)
 
 
-for i in xrange(1,11):
-    infer('{0}.jpg'.format(i))
-infer('11.jpg')
+infer('11.jepg')

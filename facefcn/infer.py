@@ -63,6 +63,8 @@ def infer(name):
                 mask[x][y] = 1
             elif hmap_head[x][y] > 0.9:
                 mask[x][y] = 0
+            elif hmap_hair[x][y] > 0.5:
+                mask[x][y] = 3
             else:
                 mask[x][y] = 2
             if ((x >= 0 and x <= 6) or (x >= im.shape[0]-7 and x <= im.shape[0]-1)) and ((y >= 0 and y <= 6) or (y >= im.shape[1]-7 and y <= im.shape[1]-1)):

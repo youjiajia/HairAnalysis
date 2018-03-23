@@ -59,6 +59,10 @@ def infer(name):
 
     for y in xrange(im.shape[0]):
         for x in xrange(im.shape[1]):
+
+
+
+
             if hmap_hair[x][y] > 0.9:
                 mask[x][y] = 1
             elif hmap_head[x][y] > 0.9:
@@ -70,6 +74,12 @@ def infer(name):
             if ((x >= 0 and x <= 6) or (x >= im.shape[0]-7 and x <= im.shape[0]-1)) and ((y >= 0 and y <= 6) or (y >= im.shape[1]-7 and y <= im.shape[1]-1)):
                 if mask[x][y] == 2 and hmap_background[x][y] > 0.9:
                     mask[x][y] == 0
+
+
+            if (x >= im.shape[0]-7 and x <= im.shape[0]-1) and (y >= 0 and y <= 6):
+                print hmap_hair[x][y], hmap_head[x][y], hmap_background[x][y],mask[x][y]
+
+
     cv2.grabCut(im,mask,rect,bgdModel,fgdModel,5,cv2.GC_INIT_WITH_MASK)
     mask2 = np.where((mask==2)|(mask==0)|(mask==3),0,1).astype('uint8')
 
@@ -82,7 +92,8 @@ def infer(name):
     firstpart,secondpart = name.split('.')
     imsave('./test/test_' + firstpart + '_time_' + str(toc-tic) + '.' + secondpart , im)
 
-for i in xrange(1, 11):
-    infer('{0}.jpg'.format(i))
+# for i in xrange(1, 11):
+#     infer('{0}.jpg'.format(i))
 
-infer('11.jpeg')
+# infer('11.jpeg')
+infer('3.jpg');

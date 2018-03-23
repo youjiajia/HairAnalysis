@@ -237,6 +237,38 @@ for n in range(len(org_images)):
     getborder = []
     cv2.imwrite(args.output_dir + "Hair-region.png", Hair_region.astype(np.int)*255)
     cv2.imwrite(args.output_dir + "NonHair-region.png", NonHair_region.astype(np.int)*255)
+
+
+
+    im = cv2.imread("./Data/Example.jpg")
+    mask = np.zeros(im.shape[:2],np.uint8)
+    bgdModel = np.zeros((1,65),np.float64)
+    fgdModel = np.zeros((1,65),np.float64)
+    rect = (0,0,im.shape[0],im.shape[1])
+
+    for y in xrange(im.shape[0]):
+        for x in xrange(im.shape[1]):
+            if Hair_region[x][y]:
+                mask[x][y] = 1
+            elif NonHair_region[x][y]:
+                mask[x][y] = 0
+            else:
+                mask[x][y] = 3
+
+    cv2.grabCut(im,mask,rect,bgdModel,fgdModel,1,cv2.GC_INIT_WITH_MASK)
+    mask2 = np.where((mask==2)|(mask==0)|(mask==3),0,1).astype('uint8')
+
+    im = im*mask2[:,:,np.newaxis]
+    print 'Done'
+    toc = time.time()
+
+    print "Processing time: ", toc-tic, "seconds"
+
+    firstpart,secondpart = name.split('.')
+    imsave('./Output/test_hair.' + secondpart , im)
+
+
+
     # for (x, y) in sliding_window(Hair_region, stepSize = detect_step):
     #     value = Hair_region[y][x]
     #     if value and  ((y-detect_step > 0 and Hair_region[y-detect_step][x] != value) or (x-detect_step > 0 and Hair_region[y][x-detect_step] != value) or (y+detect_step < Hair_region.shape[0] and Hair_region[y+detect_step][x] != value) or (x+detect_step < Hair_region.shape[1] and Hair_region[y][x+detect_step] != value)):

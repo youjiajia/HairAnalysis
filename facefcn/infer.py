@@ -81,6 +81,11 @@ def infer(name):
 
 
     cv2.grabCut(im,mask,rect,bgdModel,fgdModel,5,cv2.GC_INIT_WITH_MASK)
+
+    for y in xrange(im.shape[0]):
+        for x in xrange(im.shape[1]):
+            if (x >= im.shape[0]-7 and x <= im.shape[0]-1) and (y >= 0 and y <= 6):
+                print mask[x][y]
     mask2 = np.where((mask==2)|(mask==0)|(mask==3),0,1).astype('uint8')
 
     im = im*mask2[:,:,np.newaxis]

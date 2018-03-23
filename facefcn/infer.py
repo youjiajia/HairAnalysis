@@ -58,5 +58,27 @@ def infer(name):
     firstpart,secondpart = name.split('.')
     imsave('./test/test_' + firstpart + '_time_' + str(toc-tic) + '.' + secondpart , out_im)
 
+    mask = np.zeros(im.shape[:2],np.uint8)
+    bgdModel = np.zeros((1,65),np.float64)
+    fgdModel = np.zeros((1,65),np.float64)
+    rect = (0,0,im.shape[0],im.shape[1])
+
+    for x in xrange(im.shape[0]):
+        for y in xrange(im.shape[1]):
+            if hmap_hair[x][y] > 0.9:
+                mask[x][y] = 1
+            elif hmap_head[x][y] > 0.9:
+                mask[x][y] = 0
+            else:
+                mask[x][y] = 2
+            if ((x >= 0 and x <= 6) or (x >= im.shape[0]-7 and x <= im.shape[0]-1)) and ((y >= 0 and y <= 6) or (y >= im.shape[1]-7 and y <= im.shape[1]-1)):
+                if mask[x][y] == 2 and hmap_background[x][y] > 0.9:
+                    mask[x][y] == 0
+    cv2.grabCut(im,mask,rect,bgdModel,fgdModel,5,cv2.GC_INIT_WITH_RECT)
+    mask2 = np.where((mask==2)|(mask==0),0,1).astype('uint8')
+
+    im = im*mask2[:,:,np.newaxis]
+
+
 
 infer('11.jpeg')

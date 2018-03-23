@@ -69,7 +69,7 @@ def infer(name):
                 if mask[x][y] == 2 and hmap_background[x][y] > 0.9:
                     mask[x][y] == 0
     cv2.grabCut(im,mask,rect,bgdModel,fgdModel,5,cv2.GC_INIT_WITH_MASK)
-    mask2 = np.where((mask==2)|(mask==0),0,1).astype('uint8')
+    mask2 = np.where((mask==2)|(mask==0)|(mask==3),0,1).astype('uint8')
 
     im = im*mask2[:,:,np.newaxis]
     print 'Done'

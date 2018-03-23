@@ -1,7 +1,7 @@
 import numpy as np
 from PIL import Image
 from scipy.misc import imresize,imsave, toimage
-import time
+import time, cv2
 
 import caffe
 caffe.set_mode_cpu()

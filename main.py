@@ -237,54 +237,54 @@ for n in range(len(org_images)):
     getborder = []
     cv2.imwrite(args.output_dir + "Hair-region.png", Hair_region.astype(np.int)*255)
     cv2.imwrite(args.output_dir + "NonHair-region.png", NonHair_region.astype(np.int)*255)
-    for (x, y) in sliding_window(Hair_region, stepSize = detect_step):
-        value = Hair_region[y][x]
-        if value and  ((y-detect_step > 0 and Hair_region[y-detect_step][x] != value) or (x-detect_step > 0 and Hair_region[y][x-detect_step] != value) or (y+detect_step < Hair_region.shape[0] and Hair_region[y+detect_step][x] != value) or (x+detect_step < Hair_region.shape[1] and Hair_region[y][x+detect_step] != value)):
-            getborder.append((x,y))
-    for (x,y) in getborder:
-        for i in xrange(detect_step):
-            for i2 in xrange(detect_step):
-                if y-i >= 0 and x-i2 > 0:
-                    Hair_region[y+i][x+i2] = False
-                if x-i >= 0 and y-i2 >0:
-                    Hair_region[y+i2][x+i] = False
-    left = NonHair_region.shape[1]
-    right = 0
-    for (x, y) in sliding_window(NonHair_region, stepSize = detect_step):
-        value = NonHair_region[y][x]
-        if value and  ((x-detect_step > 0 and NonHair_region[y][x-detect_step] != value) or (x+detect_step < NonHair_region.shape[1] and NonHair_region[y][x+detect_step] != value) or (y-detect_step > 0 and NonHair_region[y-detect_step][x] != value) or (y+detect_step < NonHair_region.shape[0] and NonHair_region[y+detect_step][x] != value)):
-            if left > x and x >= 0:
-                left = x
-            if right <= x + detect_step and x + detect_step < NonHair_region.shape[1] - detect_step:
-                right = x + detect_step
-    print left
-    print right
-    for x in xrange(NonHair_region.shape[1]):
-        for y in xrange(NonHair_region.shape[0]):
-            if x>= left and x <= right:
-                NonHair_region[y][x] = False
-            else:
-                NonHair_region[y][x] = True
-    cv2.imwrite(args.output_dir + "Hair-region2.png", Hair_region.astype(np.int)*255)
-    cv2.imwrite(args.output_dir + "NonHair-region2.png", NonHair_region.astype(np.int)*255)
+    # for (x, y) in sliding_window(Hair_region, stepSize = detect_step):
+    #     value = Hair_region[y][x]
+    #     if value and  ((y-detect_step > 0 and Hair_region[y-detect_step][x] != value) or (x-detect_step > 0 and Hair_region[y][x-detect_step] != value) or (y+detect_step < Hair_region.shape[0] and Hair_region[y+detect_step][x] != value) or (x+detect_step < Hair_region.shape[1] and Hair_region[y][x+detect_step] != value)):
+    #         getborder.append((x,y))
+    # for (x,y) in getborder:
+    #     for i in xrange(detect_step):
+    #         for i2 in xrange(detect_step):
+    #             if y-i >= 0 and x-i2 > 0:
+    #                 Hair_region[y+i][x+i2] = False
+    #             if x-i >= 0 and y-i2 >0:
+    #                 Hair_region[y+i2][x+i] = False
+    # left = NonHair_region.shape[1]
+    # right = 0
+    # for (x, y) in sliding_window(NonHair_region, stepSize = detect_step):
+    #     value = NonHair_region[y][x]
+    #     if value and  ((x-detect_step > 0 and NonHair_region[y][x-detect_step] != value) or (x+detect_step < NonHair_region.shape[1] and NonHair_region[y][x+detect_step] != value) or (y-detect_step > 0 and NonHair_region[y-detect_step][x] != value) or (y+detect_step < NonHair_region.shape[0] and NonHair_region[y+detect_step][x] != value)):
+    #         if left > x and x >= 0:
+    #             left = x
+    #         if right <= x + detect_step and x + detect_step < NonHair_region.shape[1] - detect_step:
+    #             right = x + detect_step
+    # print left
+    # print right
+    # for x in xrange(NonHair_region.shape[1]):
+    #     for y in xrange(NonHair_region.shape[0]):
+    #         if x>= left and x <= right:
+    #             NonHair_region[y][x] = False
+    #         else:
+    #             NonHair_region[y][x] = True
+    # cv2.imwrite(args.output_dir + "Hair-region2.png", Hair_region.astype(np.int)*255)
+    # cv2.imwrite(args.output_dir + "NonHair-region2.png", NonHair_region.astype(np.int)*255)
 
-    alpha = closed_form_matting.closed_form_matting_with_trimap(org_image_rgb, NonHair_region.astype(np.int)*255);
-    cv2.imwrite(args.output_dir + "testalpha.png", alpha * 255.0)
-    cv2.imwrite(args.output_dir + "testalpha2.png", output_image * 255.0)
-    newimg=np.zeros([NonHair_region.shape[0],NonHair_region.shape[1],3],np.uint8)
-    for x in xrange(NonHair_region.shape[1]):
-        for y in xrange(NonHair_region.shape[0]):
-            if x>= left and x <= right:
-                if Hair_region[y][x]:
-                    newimg[:][y][x] = 255
-                else:
-                    newimg[:][y][x] = 128
-            # elif (x < detect_step and y < detect_step) or (y >= NonHair_region.shape[0]-detect_step and x >= NonHair_region.shape[1]-detect_step) or (y >= NonHair_region.shape[0]-detect_step and x < detect_step) or (y < detect_step and x >= NonHair_region.shape[1]-detect_step):
-            #     newimg[:][y][x] = 0
-            # else:
-            #     newimg[:][y][x] = 128
-    cv2.imwrite(args.output_dir + "finall.png", newimg)
-    image = cv2.imread("./Data/Example.jpg", cv2.IMREAD_COLOR) / 255.0
-    trimap = cv2.imread(args.output_dir + "finall.png", cv2.IMREAD_GRAYSCALE) / 255.0
-    output = closed_form_matting.closed_form_matting_with_trimap(image, trimap)
-    cv2.imwrite(args.output_dir + "finall2.png", output * 255.0)
+    # alpha = closed_form_matting.closed_form_matting_with_trimap(org_image_rgb, NonHair_region.astype(np.int)*255);
+    # cv2.imwrite(args.output_dir + "testalpha.png", alpha * 255.0)
+    # cv2.imwrite(args.output_dir + "testalpha2.png", output_image * 255.0)
+    # newimg=np.zeros([NonHair_region.shape[0],NonHair_region.shape[1],3],np.uint8)
+    # for x in xrange(NonHair_region.shape[1]):
+    #     for y in xrange(NonHair_region.shape[0]):
+    #         if x>= left and x <= right:
+    #             if Hair_region[y][x]:
+    #                 newimg[:][y][x] = 255
+    #             else:
+    #                 newimg[:][y][x] = 128
+    #         # elif (x < detect_step and y < detect_step) or (y >= NonHair_region.shape[0]-detect_step and x >= NonHair_region.shape[1]-detect_step) or (y >= NonHair_region.shape[0]-detect_step and x < detect_step) or (y < detect_step and x >= NonHair_region.shape[1]-detect_step):
+    #         #     newimg[:][y][x] = 0
+    #         # else:
+    #         #     newimg[:][y][x] = 128
+    # cv2.imwrite(args.output_dir + "finall.png", newimg)
+    # image = cv2.imread("./Data/Example.jpg", cv2.IMREAD_COLOR) / 255.0
+    # trimap = cv2.imread(args.output_dir + "finall.png", cv2.IMREAD_GRAYSCALE) / 255.0
+    # output = closed_form_matting.closed_form_matting_with_trimap(image, trimap)
+    # cv2.imwrite(args.output_dir + "finall2.png", output * 255.0)

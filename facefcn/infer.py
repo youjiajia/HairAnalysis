@@ -63,8 +63,8 @@ def infer(name):
     fgdModel = np.zeros((1,65),np.float64)
     rect = (0,0,im.shape[0],im.shape[1])
 
-    for x in xrange(im.shape[0]):
-        for y in xrange(im.shape[1]):
+    for y in xrange(im.shape[0]):
+        for x in xrange(im.shape[1]):
             if hmap_hair[x][y] > 0.9:
                 mask[x][y] = 1
             elif hmap_head[x][y] > 0.9:

@@ -50,13 +50,6 @@ def infer(name):
     out_im[:, :, 0] = hmap_hair * 255
     out_im[:, :, 1] = hmap_head * 255
     out_im[:, :, 2] = hmap_background * 255
-    print 'Done'
-    toc = time.time()
-
-    print "Processing time: ", toc-tic, "seconds"
-
-    firstpart,secondpart = name.split('.')
-    imsave('./test/test_' + firstpart + '_time_' + str(toc-tic) + '.' + secondpart , out_im)
     im = cv2.imread('./test/' + name)
     im=cv2.resize(im,(512,512))
     mask = np.zeros(im.shape[:2],np.uint8)
@@ -75,11 +68,17 @@ def infer(name):
             if ((x >= 0 and x <= 6) or (x >= im.shape[0]-7 and x <= im.shape[0]-1)) and ((y >= 0 and y <= 6) or (y >= im.shape[1]-7 and y <= im.shape[1]-1)):
                 if mask[x][y] == 2 and hmap_background[x][y] > 0.9:
                     mask[x][y] == 0
-    cv2.grabCut(im,mask,rect,bgdModel,fgdModel,5,cv2.GC_INIT_WITH_RECT)
+    cv2.grabCut(im,mask,rect,bgdModel,fgdModel,5,cv2.GC_INIT_WITH_MASK)
     mask2 = np.where((mask==2)|(mask==0),0,1).astype('uint8')
 
     im = im*mask2[:,:,np.newaxis]
-    imsave('./test/test_' + firstpart + '2.' + secondpart , im)
+    print 'Done'
+    toc = time.time()
+
+    print "Processing time: ", toc-tic, "seconds"
+
+    firstpart,secondpart = name.split('.')
+    imsave('./test/test_' + firstpart + '_time_' + str(toc-tic) + '.' + secondpart , im)
 
 
 

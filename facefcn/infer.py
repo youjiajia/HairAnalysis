@@ -84,8 +84,7 @@ def infer(name):
     firstpart,secondpart = name.split('.')
     imsave('./test/test_' + firstpart + '_time_' + str(toc-tic) + '.' + secondpart , im)
 
-# for i in xrange(1, 11):
-#     infer('{0}.jpg'.format(i))
+for i in xrange(1, 11):
+    infer('{0}.jpg'.format(i))
 
-# infer('11.jpeg')
-infer('3.jpg');
+infer('11.jpeg')

@@ -264,8 +264,7 @@ for n in range(len(org_images)):
 
     print "Processing time: ", toc-tic, "seconds"
 
-    firstpart,secondpart = name.split('.')
-    imsave('./Output/test_hair.' + secondpart , im)
+    imsave('./Output/test_hair.jpg' , im)
 
 
 

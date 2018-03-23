@@ -58,7 +58,7 @@ def infer(name):
     firstpart,secondpart = name.split('.')
     imsave('./test/test_' + firstpart + '_time_' + str(toc-tic) + '.' + secondpart , out_im)
     im = cv2.imread('./test/' + name)
-    im.reshape(512,512)
+    im=cv2.resize(im,(512,512))
     mask = np.zeros(im.shape[:2],np.uint8)
     bgdModel = np.zeros((1,65),np.float64)
     fgdModel = np.zeros((1,65),np.float64)

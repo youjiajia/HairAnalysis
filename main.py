@@ -246,8 +246,8 @@ for n in range(len(org_images)):
     fgdModel = np.zeros((1,65),np.float64)
     rect = (0,0,im.shape[0],im.shape[1])
 
-    for y in xrange(im.shape[0]):
-        for x in xrange(im.shape[1]):
+    for x in xrange(im.shape[0]):
+        for y in xrange(im.shape[1]):
             if Hair_region[x][y]:
                 mask[x][y] = 1
             elif NonHair_region[x][y]:

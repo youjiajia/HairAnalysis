@@ -21,6 +21,7 @@ import numpy as np
 import skimage
 import caffe
 import argparse
+from scipy.misc import imresize,imsave, toimage
 
 ############################### Parser #################################
 

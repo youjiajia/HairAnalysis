@@ -57,7 +57,7 @@ def infer(name):
 
     firstpart,secondpart = name.split('.')
     imsave('./test/test_' + firstpart + '_time_' + str(toc-tic) + '.' + secondpart , out_im)
-
+    im = cv2.imread('./test/' + name)
     mask = np.zeros(im.shape[:2],np.uint8)
     bgdModel = np.zeros((1,65),np.float64)
     fgdModel = np.zeros((1,65),np.float64)
@@ -78,6 +78,7 @@ def infer(name):
     mask2 = np.where((mask==2)|(mask==0),0,1).astype('uint8')
 
     im = im*mask2[:,:,np.newaxis]
+    imsave('./test/test_' + firstpart + '2.' + secondpart , im)
 
 
 
